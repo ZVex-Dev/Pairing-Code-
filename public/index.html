@@ -4,18 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WhatsApp QR Code Generator</title>
-    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <div class="container">
-        <h1>WhatsApp QR Code</h1>
-        <p>Scan QR Code untuk login ke WhatsApp Web</p>
-        <div id="qr-container">
-            <img id="qr-code" src="" alt="QR Code">
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen">
+
+    <div class="bg-gray-800 p-6 rounded-lg shadow-lg text-center w-full max-w-md">
+        <h1 class="text-2xl font-bold mb-4">WhatsApp QR Code Generator</h1>
+
+        <div id="qr-container" class="hidden">
+            <img id="qr-code" class="w-40 mx-auto my-4" alt="QR Code">
         </div>
-        <button onclick="refreshQR()">Refresh QR Code</button>
+
+        <input type="text" id="phone-number" placeholder="Masukkan Nomor WhatsApp"
+            class="w-full p-2 rounded bg-gray-700 border border-gray-600 focus:outline-none focus:border-cyan-400">
+
+        <div class="flex gap-4 mt-4">
+            <button onclick="getQRCode()" class="bg-cyan-500 hover:bg-cyan-600 px-4 py-2 rounded">
+                Scan QR Code
+            </button>
+            <button onclick="sendPairingCode()" class="bg-green-500 hover:bg-green-600 px-4 py-2 rounded">
+                Kirim Pairing Code
+            </button>
+        </div>
+
+        <p id="status-message" class="text-sm mt-3"></p>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        async function getQRCode() {
+            document.getElementById("qr-container").classList.remove("hidden");
+            document.getElementById("qr-code").src = "/qr";
+        }
+
+        async function sendPairingCode() {
+            const number = document.getElementById("phone-number").value;
+            if (!number) {
+                alert("Masukkan nomor WhatsApp terlebih dahulu!");
+                return;
+            }
+
+            try {
+                const response = await fetch(`/send-code?number=${number}`);
+                const message = await response.text();
+                document.getElementById("status-message").innerText = message;
+            } catch (error) {
+                document.getElementById("status-message").innerText = "Gagal mengirim kode!";
+            }
+        }
+    </script>
+
 </body>
 </html>
