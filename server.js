@@ -1,49 +1,58 @@
 const express = require("express");
 const { Client, LocalAuth } = require("whatsapp-web.js");
 const qrcode = require("qrcode");
-const cors = require("cors");
 
 const app = express();
-app.use(express.json());
-app.use(cors());
-app.use(express.static("public"));
+const PORT = process.env.PORT || 3000;
 
-let qrCodeData = null;
-
+// Konfigurasi WhatsApp Client
 const client = new Client({
-    authStrategy: new LocalAuth(),
-    puppeteer: {
-        headless: true, 
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-    }
+  authStrategy: new LocalAuth(),
 });
 
+let qrCodeUrl = null;
+
+// Event: Saat perlu scan QR
 client.on("qr", async (qr) => {
-    console.log("QR Code received, generating image...");
-    qrCodeData = await qrcode.toDataURL(qr);
+  qrCodeUrl = await qrcode.toDataURL(qr);
+  console.log("QR Code Updated!");
 });
 
+// Event: Saat berhasil terhubung
 client.on("ready", () => {
-    console.log("WhatsApp Web Client is ready!");
-    qrCodeData = null; // Reset QR setelah login
+  console.log("WhatsApp Client Ready!");
+  qrCodeUrl = null; // Hapus QR setelah koneksi
 });
 
-client.on("disconnected", (reason) => {
-    console.log("WhatsApp disconnected:", reason);
-    qrCodeData = null;
-});
-
+// Start WhatsApp Client
 client.initialize();
 
+// Endpoint: Tampilkan QR Code
 app.get("/qr", (req, res) => {
-    if (qrCodeData) {
-        res.json({ qr: qrCodeData });
-    } else {
-        res.json({ qr: null, message: "QR Code belum tersedia atau sudah login." });
-    }
+  if (qrCodeUrl) {
+    res.send(`<img src="${qrCodeUrl}" alt="Scan QR Code">`);
+  } else {
+    res.send("WhatsApp sudah terhubung!");
+  }
 });
 
-const PORT = process.env.PORT || 3000;
+// Endpoint: Kirim Pairing Code
+app.get("/send-code", async (req, res) => {
+  const { number } = req.query;
+  
+  if (!number) return res.status(400).send("Nomor tidak boleh kosong!");
+
+  const pairingCode = Math.floor(100000 + Math.random() * 900000); // 6-digit code
+
+  try {
+    await client.sendMessage(`${number}@c.us`, `Kode Pairing WhatsApp: ${pairingCode}`);
+    res.send(`Kode Pairing berhasil dikirim ke ${number}`);
+  } catch (err) {
+    res.status(500).send("Gagal mengirim kode!");
+  }
+});
+
+// Start Server
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
