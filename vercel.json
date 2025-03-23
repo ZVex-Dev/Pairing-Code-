@@ -1,6 +1,6 @@
 {
-  "rewrites": [
-    { "source": "/qr", "destination": "/api/qr" },
-    { "source": "/send-code", "destination": "/api/send-code" }
+  "routes": [
+    { "src": "/qr", "dest": "/api/qr" },
+    { "src": "/send-code", "dest": "/api/send-code" }
   ]
 }
